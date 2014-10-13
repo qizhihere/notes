@@ -1,0 +1,90 @@
+ 顺便的，我整理了一个MuPDF的热键列表，给那些仍旧被man page蒙蔽着的人们。
+代码:
+file:
+========================
+q           close
+r           reload
+
+S           save
+p           presentation
+
+view:
+========================
++ =         zoom in
+-           zoom out
+
+W           fix width
+H           fix height
+
+L           rotate left
+R           rotate right
+
+f           full-screen
+w           shrink-wrap
+
+c           toggle color
+i           invert color
+
+move:
+========================
+h           scroll left
+j           scroll down
+k           scroll up
+l           scroll right
+
+.           next page, top
+,           previous page, bottom
+
+space       next page
+b           previous page
+
+>           next 10 pages
+<           back 10 pages
+
+g           first page
+G           last page
+
+123g        go to page 123
+123<Enter>  go to page 123
+
+search:
+========================
+/           search next
+?           search back
+
+n           next result
+N           previous result
+
+bookmark:
+========================
+m           mark page, max 255
+t           back to latest mark
+
+1m          set bookmark 1, max 10, 0 to 9
+1t          show bookmark 1
+
+key:
+========================
+<Up>                scroll up 
+<Down>              scroll down
+<Left>              previous page
+<Right>             next page
+
+<Space>             next page
+<Backspace>         previous page
+
+<PageUp>            previous page, bottom
+<PageDown>          next page, top
+
+mouse:
+========================
+<LeftMouse>         hand tool, follow link
+
+<ScrollWheelUp>     scroll up
+<ScrollWheelDown>   scroll down
+
+<S-ScrollWheelUp>   scroll left
+<S-ScrollWheelDown> scroll right
+
+<C-ScrollWheelUp>   zoom in
+<C-ScrollWheelDown> zoom out

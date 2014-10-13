@@ -1,0 +1,113 @@
+来源:http://www.linux99.com/
+1.LINUX系统中的passwd文件和命令
+通常在linux系统中,用户的关键信息存放在/etc/passwd文件中,
+每一个合法用户在该文件中对应一行记录。该记录定义了每个
+用户的属性。
+每行记录的含义：
+注册名：口令：用户标识号：组标识号：用户名：用户主目录：命令解释程序
+注：现代unix/linux中，口令通常用`x`代替，真正的口令存放在/etc/shadow中。
+命令解释程序即shell。
+
+passwd命令：
+对于用户来说可用于更改自己的密码，而系统管理员则可用passwd命令修改或
+查看其他用户的密码。
+格式：passwd [-dklS][-u <-f>][用户名称]
+参数： 	    -d 　删除密码。本参数仅有系统管理者才能使用。
+	    -f 　强制执行。
+	    -k 　设置只有在密码过期失效后，方能更新。
+	    -l 　锁住密码。
+	    -s 　列出密码的相关信息。本参数仅有系统管理者才能使用。
+	    -u 　解开已上锁的帐号。
+
+2.shadow文件：
+linux的用户信息存放在/etc/passwd中，而用户密码在该文件中只用一个`x`表示，
+真正的密码存放在/etc/shadow文件中，只有root用户能够打开。该文件的格式为：
+用户名：加密口令：上一次修改的时间（从1970年1月1日起的天数）：口令在两
+次修改间的最小天数：口令修改之前向用户发出警告的天数：口令终止后账号被
+禁用的天数：从1970年1月1日起账号被禁用的天数：保留域
+其中加密口令是通过DES加密方式，破解方式为暴力破解，可采用字典攻击。
+
+3.linux根目录下的几类文件夹：
+见http://www.linux99.com/linuxrumen/ZhiShi/1633.html
+
+4.ls命令查看目录是不同颜色的含义：
+蓝色为文件夹;绿色是可执行文件;浅蓝色是链接文件;红框文件是加了SUID位，任意权限;红色为压缩文件;褐色为设备文件。
+
+5.Unix/Linux上常见的Shell脚本解释器有bash、sh、csh、ksh等，习惯上把它们称作一种Shell。
+我常说有多少种Shell，其实说的是Shell脚本解释器。
+
+6.dpkg命令安装文件出错时出现
+	error:Package is in a very bad inconsistent state - you should
+ 	reinstall it before attempting a removal.
+  重新配置所有软件包：sudo dpkg --configure -a
+  使用sudo dpkg --remove --force-remove-reinstreq 软件名来强制卸载软件包，
+  之后sudo apt-get --purge remove -f 软件包名
+      sudo rm -rf /usr/lib/对应目录/*	# 删除残余文件
+  还可以使用
+      sudo apt-get autoclean 
+      sudo apt-get autoremove
+  来清除一些无用软件包
+
+7.添加ppa或打开software-properties-gtk时出现
+      aptsources.distro.NoDistroTemplateException: 
+	Error: could not find a distribution template for LinuxMint/qiana
+  使用sudo apt install mintsources安装即可
+
+8.安装软件包时出现类似 Unknown media type in type xxx 的信息，使用命令修复：
+      sudo rm /usr/share/mime/packages/kde.xml 
+      sudo update-mime-database /usr/share/mime
+
+9.系统启动过程自动启动的脚本：
+  init进程读取/etc/inittab,执行rc.sysinit脚本
+  rc.sysinit根据inittab执行rc?.d中的脚本，同时进行网络配置、文件系统检查等
+  之后执行/etc/rc.local脚本
+  /etc/profile 和 ~/.bash_profile 在启动一个交互登陆shell的时候被调用。
+  /etc/bashrc 和 ~/.bashrc 在一个交互的非登陆shell启动的时候被调用。
+  ~/.bash_logout 在用户注销登陆的时候被读取
+
+
+关于rc?.d:
+    rc?.d中放置的是init.d中脚本的链接，命名格式是:
+          S{number}{name}
+          K{number}{name}
+    S开始的文件在执行时向脚本传递start参数
+    K开始的文件在执行时向脚本传递stop参数
+    number决定执行的顺序,name为启动程序脚本名，与/etc/init.d中的脚本名一样
+
+
+
+
+
+
+=========================================================================================
+					常用命令
+=========================================================================================
+1. wc 统计文件的字节数、字数、行数并输出
+       -c 统计字节数
+       -l 统计行数
+       -w 统计字数
+2. mkdir 创建文件夹
+       -p 递归创建(--parents)
+       -m 模式,指定权限(--mode),如-m777
+       -v 创建时显示信息(--verbose)
+3.mount挂载硬盘、U盘、光驱等
+    mount -t auto /dev/cdrom /mnt/CD/ #挂载光驱
+    mount -t vfat /dev/sdc1 /mnt/U/   #挂载U盘
+    mount -o loop xxx.iso /mnt/ISO/   #挂载iso映像,只读
+    mount -o rw,loop xxx.iso /mnt/ISO/ #挂载iso映像，可读可写
+    注：这里的参数t、o即为type、options的缩写，`-o`参数可以指定
+    挂载时的使用的字符编码(常用utf8、cp936)等
+    mount -o rw,loop,iocharset=utf8 xxx.iso path/to/dir
+4.文件/文件名编码转换
+    iconv -f latin1 -t utf-8 inputfile -o outputfile    //latin1->utf8
+    convmv -f 原编码 -t 新编码 [选项] 文件  //转换文件名编码
+    convmv命令常用参数:
+        -r          递归处理子文件夹
+        --notest    真正进行操作,默认情况下是不对文件进行真实操作的,而
+                    只是实验
+        --list      显示所有支持的编码
+        --unescap   进行转义,如将%20变成空格
+        例子:
+        convmv -f utf-8 -t gbk --notest 文件名  //将文件名由utf-8 => gbk
+5.查看操作系统是32位还是64位的：
+    getconf LONG_BIT

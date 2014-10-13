@@ -1,0 +1,7 @@
+1.Oxygen-transparent安装：
+    sudo apt-get install build-essential cmake kdelibs5-dev kdebase-workspace-dev libxrender-dev libx11-dev git
+    git clone git://anongit.kde.org/oxygen-transparent
+    cd oxygen-transparent
+    ./oxygen-setup.pl --branch master
+    cd build/
+    sudo make && make install

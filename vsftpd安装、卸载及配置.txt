@@ -1,0 +1,119 @@
+Ubuntu Server安装、卸载及配置vsFTPd
+
+如果你想在你的Linux/Unix服务器上搭建一个安全、高性能、稳定性好的FTP服务器，那么vsFTPd可能是你的首选应用。
+vsFTPd意思为“very secure FTP daemon(非常安全的FTP进程)”，是一个基于GPL发布的类UNIX类操作系统上运行的服务器的名字（是一种守护进程），可以运行在诸如 Linux、BSD、Solaris、HP-UX以及Irix等系统上面。vsFTPd支持很多其他传统的FTP服务器不支持的良好特性。
+vsFTPd并不是Linux下唯一的FTP Server，其他常见的还有ProFTPD、Pure-FTPd等
+
+安装vsFTPd
+sudo apt-get install vsftpd
+
+卸载vsFTPd
+sudo apt-get remove vsftpd
+
+常见命令
+启用服务：sudo service vsftpd start
+停用服务：sudo service vsftpd stop
+重启服务：sudo service vsftpd restart
+
+配置vsFTPd
+配置文档
+运行
+sudo gedit /etc/vsftpd.conf
+
+先给大家看下配置文档，开头加#表示注释，此情况下该段的功能并不会启用，意思就是说如果你想启用某功能要记得把开头的#给去掉
+
+listen=YES
+#YES：表示以standalone运行模式启动，运行期间一直驻留在内存中，优点是对接入信号反应快，缺点是损耗了一定的系统资源，因此经常应用于对实时反应要求较高的专业FTP服务器；NO：表示以xinetd运行模式启动，只在外部连接发送请求时才调用FTP进程，因此不适合应用在同时连接数量较多的系统。
+
+listen_ipv6=YES
+#YES及NO表示如上述，区别在于上述以IPv4运行，listen_ipv6以IPv6运行。但是一个配置文件只能支持一个，即要支持IPv4就要注释掉IPv6，解决方法是创建两个配置文档，一个注释IPv4，一个注释IPv6，然后重启vsftpd服务让其运行两个配置
+
+anonymous_enable=NO
+#YES：表示允许匿名用户访问
+
+local_enable=YES
+#YES：表示允许本地用户登录
+
+write_enable=YES
+#YES：表示允许本地用户对FTP Server具有写权限
+
+local_umask=022
+#umask决定目录和文件被创建时得到的初始权限，全权限为777，默认配置下777-022=755；通过4、2、1的组合，得到以下几种权限：0（没有权限）；4（读取权限）；5（4+1=读取+执行）；6（4+2=读取+写入）；7（4+2+1=读取+写入+执行）。三位数值第一位是拥有者，第二位是同组用户，第三位是其他用户。
+
+anon_upload_enable=YES
+#YES：允许匿名用户上传文件
+
+anon_mkdir_write_enable=YES
+#YES：允许匿名用户创建文件夹
+
+dirmessage_enable=YES
+#YES：表示用户首次访问服务器上某个目录时，FTP服务器将显示欢迎信息。欢迎信息是通过访问的目录下的.message文件获取
+
+use_localtime=YES
+#YES：表示使用主机的时间
+
+xferlog_enable=YES
+#YES：开启详细的有关上传及下载的日志，日志文件存放路径为/var/log/vsftpd.log
+
+connect_from_port_20=YES
+#YES：表示允许主动连接FTP数据传输端口为20，21为连接控制端口
+
+chown_uploads=YES
+#YES：表示匿名用户上传的文件的所属用户会变成chown_username所指定的用户
+
+chown_username=whoever
+#表示匿名用户上传的文件所属用户
+
+xferlog_file=/var/log/vsftpd.log
+#表示记录上传及下载的日志所存放的路径
+
+xferlog_std_format=YES
+#YES：表示以标准xferlog的格式书写传输日志文件
+
+idle_session_timeout=600
+#表示空闲超时为600秒
+
+data_connection_timeout=120
+#表示传输超时120秒
+
+nopriv_user=ftpsecure
+#表示运行vsftpd需要的非特权系统用户
+
+async_abor_enable=YES
+#YES：表示识别异步ABOR请求，FTP客户端传达“async ABOR”指令时才需启用
+
+ascii_upload_enable=YES
+#YES：表示以ASCII方式上传数据，否则服务器会忽略ASCII方式的请求
+
+ascii_download_enable=YES
+#YES：表示以ASCII方式下载数据
+
+ftpd_banner=Welcome to blah FTP service.
+#设置欢迎信息
+
+deny_email_enable=YES
+#阻止banned_email_file列表中，匿名用户所使用的邮件地址登录
+
+banned_email_file=/etc/vsftpd.banned_emails
+#阻止匿名用户使用的邮件地址的列表文件路径
+
+chroot_local_user=YES
+#YES：表示用户不能访问自己home目录以外的目录
+
+chroot_list_enable=YES
+#YES：表示设置指定用户不能访问自己home目录以外的目录
+
+chroot_list_file=/etc/vsftpd.chroot_list
+#表示设置不能访问自己home目录外的用户列表文件的路径
+
+ls_recurse_enable=YES
+#YES：表示禁用“-R”递归查询，以防大量消耗资源
+
+secure_chroot_dir=/var/run/vsftpd/empty
+#指定一个任何登录用户都不能写的文件夹，当vsftpd不需要访问文件系统时，把登录用户限制在此文件夹
+
+pam_service_name=vsftpd
+#设置PAM外挂模块提供的认证服务所使用的配置文件名
+
+rsa_cert_file=/etc/ssl/private/vsftpd.pem
+#指定SSL中RSA认证证书的路径位置

@@ -1,0 +1,23 @@
+1.VirtulBox
+    ERROR:VirtualBox: Effective UID is not root (euid=1000 egid=100 uid=1000 gid=100)
+    DESC:系统还原后出现的文件夹权限问题导致VirtualBox启动错误
+=>`sudo chmod 4711 /usr/lib/virtualbox/VirtualBox`
+
+2.安装软件包时的Unknown media type
+    ERROR:Unknown media type in type 'all/all'
+          Unknown media type in type 'all/allfiles'
+          Unknown media type in type 'uri/mms'
+          Unknown media type in type 'uri/mmst'
+          Unknown media type in type 'uri/mmsu'
+          Unknown media type in type 'uri/pnm'
+          Unknown media type in type 'uri/rtspt'
+          Unknown media type in type 'uri/rtspu'
+    DESC:it is a bug
+=>`sudo rm /usr/share/mime/packages/kde.xml` 
+  `sudo update-mime-database /usr/share/mime`
+
+3.安装软件包时的debconf错误
+    ERROR:debconf: unable to initialize frontend: Dialog
+    DESC:系统中缺少 dialog-like 程序
+=>solution1: `apt-get install dialog` 或 `apt-get install whiptail`
+=>solution2: `dpkg-reconfigure debconf`->6. Noninteractive->high->readline

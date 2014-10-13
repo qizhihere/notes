@@ -1,0 +1,26 @@
+1.创建socket
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #地址簇ipv4,类型tcp
+    如果要使用UDP协议，则需要修改类型为socket.SOCK_DGRAM
+2.连接到主机，发送数据，接收数据(客户端)
+    s.connect((host_ip, port))
+    s.sendall(msg)
+    response = s.recv(4096) #参数指定每次最多读取的字节，超过的部分会在下次调用时读取(循环)
+    s.close() #关闭连接
+    循环读取收到的数据:
+    while 1：
+        buf = socket.recv(1024)
+        if not len(buf):
+            break
+        print buf
+3.绑定端口，监听连接,接受连接(服务器端)
+    s.bind((host, port)) #host通常为空，代表所有可用的接口
+    s.listen(10) #10为最大等待连接数，如果有10个连接等待处理，则第11个连接将被拒绝
+    conn, addr = s.accept() #conn代表接受的连接，addr为该连接的ip和端口的列表
+    recv_data = conn.recv(1024) #接受的数据
+    conn.sendall(response) #向该连接发送响应数据
+    conn.close() #关闭该连接
+    s.close() #关闭socket
+
+
+

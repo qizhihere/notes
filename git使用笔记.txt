@@ -1,0 +1,131 @@
+git使用笔记：
+1.安装git
+2.配置个人信息
+    =>git config --global user.name "your name"
+    =>git config --global user.email "your email"
+3.创建版本库
+    =>cd path/to/your/dir
+    =>git init
+4.添加文件到版本库,即将修改放到暂存区
+    =>git add filename
+5.提交所有文件到仓库并添加注释，一次性将暂存区的所有修改提交到分支
+    =>git commit -m "description"
+    注：git commit提交所有文件而不是所有修改，只有使用git add添加
+        添加到暂存区的修改在使用git commit时会被提交到版本库，也就
+        是说下面两种方式均正确：
+            第一次修改->git add->第二次修改->git add->git commit
+            第一次修改->第二次修改->git add->git commit
+        还可以一次性提交修改而不用经过暂存区：
+            =>git commit "description" -a
+        但强烈建议使用暂存区而尽量少使用这种一次性提交的方式。
+
+6.查看文件的修改(与版本库中的进行对比)
+    =>git diff filename
+    =>git diff HEAD -- filename
+7.查看版本库状态
+    =>git status
+8.查看文件提交记录
+    =>git log
+    =>git log --pretty=oneline /*查看记录，每一条记录在一行内显示,可以查看commit id*/ 
+    =>git reflog /*查看每一次命令的历史记录，可以在此查看到commit id*/
+    注：为避免重复,git的提交记录使用sha1计算得出的一串十六进制字符串来区别
+9.版本回退
+    =>git reset --hard HEAD^ /*将版本回退到上一次提交*/ 
+    =>git reset --hard 2e99 /*将版本恢复到指定的提交，2e99是提交记录id的前几位*/
+    注：1.git的版本回退仅仅是内部的HEAD指针(指向当前版本的)的改变和工作区文件的更新，
+        因此速度非常快
+        2.如果git log找不到commit id,可以使用git reflog查看commit id.
+10.撤销修改
+    =>git checkout -- filename /*撤销修改到最近一次提交或修改*/
+    =>git checkout HEAD~3 /*回退3个版本*/
+    注：这里有两种情况：
+        1.文件自修改后还没有放到暂存区，则回到和版本库一模一样的状态
+        2.文件已经放到暂存区，之后又作了修改，则回到添加到暂存区后的状态
+   撤销暂存区修改
+    =>git reset HEAD filename /*将暂存区的修改撤销，重新放回工作区*/
+11.删除文件
+    =>git rm filename /*从版本库中删除文件*/
+    注：删除后需要提交
+12.添加远程仓库
+    1.创建ssh key:
+        =>ssh-keygen -t rsa -C "youremail@example.com" /*参数t为type,C为comment,即登录信息*/ 
+        创建完毕后可以在用户主目录下找到.ssh目录，其中的id_rsa为私匙，id_rsa.pub是公匙
+    2.登录Github,打开"settings","SSH Keys"页面，点击"Add SSH Key",填入任意title,
+      粘贴id_rsa.pub的内容，点击"Add Key"，添加成功后即可使用Github的Git仓库了。
+    3.点击"Repositories"-"create one"来创建一个git仓库，填入仓库名和描述(可选)即可。
+    4.在本地添加
+        =>git remote add origin git@github.com:qizhihere/learngit.git
+        添加远程仓库，名字为origin(可以自定义,默认的是origin)
+        =>git remote remove origin /*移除远程仓库*/
+13.使用远程仓库
+    =>git push -u origin master /*将本地的master分支推送到远程仓库,添加-f参数为强制,-u参数设定upstream*/
+    =>git remote /*查看远程仓库的整体信息,添加参数-v查看详细信息*/
+    =>git remote show origin /*查看远程仓库orgin的信息*/
+    =>git clone git@github.com:qizhihere/learngit.git /*将远程仓库克隆到本地*/
+    =>git checkout -b branchname origin/branchname /*在本地创建和远程分支对应的分支*/
+    =>git fetch <remote> /*抓取远程分支，但不与本地分支整合*/
+    =>git pull <remote> <branch> /*抓取远程分支的新提交并合并到本地分支,如果有冲突，需要先处理冲突*/
+    =>git branch --set-upstream-to origin/branchname <local-branch> /*建立本地分支和远程分支的关联*/
+    =>git branch --track <local-branch> <remote-branch> /*作用同上*/
+    =>git branch <local-branch> origin/master /*作用同上*/
+    注：git支持多种协议，默认的git://使用ssh,速度最快;https也可以使用，但速度较慢，且每次推送
+        都要输入口令
+14.使用分支
+    =>git branch dev /*创建dev分支*/ 
+    =>git checkout dev /*切换到dev分支*/ 
+    <==>git checkout -b dev /*创建dev分支并切换到dev分支，-b参数表示创建并切换*/
+    =>git checkout -b dev origin/dev /*从远程仓库origin中提取dev分支*/
+    =>git push <remote> :<branch> /*删除一个远程分支*/
+    =>git branch /*查看当前分支列表*/
+    =>git branch -m <old_branch_name> <new_branch_name> /*重命名本地分支*/
+    =>git merge branchname /*以fast forward方式合并某分支到当前分支*/
+    =>git merge --no-ff -m "description" branchname /*以普通模式合并某分支到当前分支*/
+    =>git branch -d branchname /*删除分支*/
+    =>git branch -D branchname /*强制删除未合并的分支*/
+    注：git记录每一次的文件提交，将其串成时间线的形式，分支则为时间线的分支，要合并分支，则两
+        分支的提交次数必须不同，如果相同，则需要对当前分支修改使提交次数不同后才能合并。
+    =>git log --graph --pretty=oneline --abbrev-commit /*查看分支合并情况,排版并缩写commit id*/
+15.使用stash保存工作区session
+    =>git stash /*将当前工作区保存起来*/
+    =>git stash list /*查看保存的工作区列表*/
+    =>git stash apply stash@{0}/*恢复保存的工作区内容*/
+    =>git stash drop stash@{0}/*删除保存的工作区内容*/
+    <==>git stash pop stash@{0}/*恢复保存的工作区内容并将其删除*/
+    注：@stash{0}可加可不加
+16.标签管理
+    =>git tag tagname /*新建一个标签默认为HEAD，也可以在后面指定一个commit id*/
+    =>git tag -a tagname -m "description" /*可以在创建标签时添加标签信息*/
+    =>git tag -s tagname -m "description" commit_id /*在创建标签时使用PGP签名*/
+    =>git show tagname /*查看某个标签的信息*/
+    =>git tag /*查看所有标签*/
+    =>git tag -d tagname /*删除标签*/
+    =>git push origin tagname /*将某个标签推送到远程*/
+    =>git push origin --tags /*一次性推送所有未推送到远程的本地标签*/
+    =>git push origin :refs/tags/tagname /*删除远程仓库origin的某个标签*/
+17.忽略文件
+    通过.gitignore保存git忽略的文件或目录列表，列表中的文件将不会被git跟踪
+    官方文件模板：https://github.com/github/gitignore
+18.命令别名(alias)
+    =>git config --global alias.st status /*设置st为status的别名，git st即为git status*/
+    =>git config --global alias.co checkout
+    =>git config --global alias.ci commit
+    =>git config --global alias.br branch
+    =>git config --global alias.unstage 'reset HEAD'
+    =>git config --global alias.last 'log -1' /*最后一次提交信息*/
+    =>git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+19.将远程仓库clone到当前文件夹
+    =>git remote add origin gitpath
+    =>git fetch
+    =>git branch master origin/master
+    =>git checkout master
+20.git小工具tig的使用:
+        tig         进入tig，显示提交记录
+        tig fname   显示某个文件或文件夹的提交记录
+    进入tig后：
+        H       查看所有分支
+        S       查看工作区状态
+        c       查看stage
+        y       查看stash
+        l       查看log
+        d       查看diff
+

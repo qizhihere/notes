@@ -1,0 +1,245 @@
+控制器
+    1.文件名不需要加后缀，全部小写
+    2.类名首字母大写，继承CI_Controller基类
+    3.以下划线开头或者非public的方法不能被浏览器请求
+    4.在config/routes.php中可以配置默认控制器$route['default_controller']
+    5.**与类名相同(无论大小写)的方法会被当做类的构造方法**
+视图
+    1.在控制器中如果加载视图，直接使用视图名字，不写扩展名，如果有子目录，则写上目录名：
+        $this->load->view(视图);
+    可以多次调用。
+    分配变量时，可以在载入视图时分配(第二个参数,关联数组或单个变量)，也可以使用:
+        $this->load->vars(name, value);
+    2.视图中，直接使用原生php代码，也可以移植smarty
+    3.循环输出变量时，推荐使用
+        <?php foreach($list as $item):?>
+            <?=$item['name']?>
+            <?=$item['value']?>
+        <?php endforeach?>
+        这种写法在php5.4以上被支持，即使不支持，CI也会自动处理好以使这种写法有效。
+        更多的还有if、for、while等。
+ 
+
+1.控制器文件名与类名相同，类名首字母大写，继承CI_Controller基类。
+    不需要加后缀。以下划线开头的方法不能被浏览器请求。
+2.载入视图文件使用$this->load->view('view.html');后缀名可以不写。
+　可以按文件夹载入$this->load->view('folderpath/view.html')。
+3.给视图分配数据，直接在载入视图时添加第二个参数即可。载入多个
+　视图时，同样的数据分配一次则即可。可以分配变量，也可以是数
+　组(数组中的每一个元素都被分配给变量)。
+4.载入辅助函数使用$this->load->helper('name');可以在autoload.php
+    中配置自动加载函数。
+
+    ***CI中读取配置项使用config_item()函数，修改配置项使用$this->config->set_item('name', 'value')
+    
+5.url辅助函数：
+	site_url()    以index.php单入口文件结束的网站url
+	base_url()    index.php单入口文件所在目录的url
+	index_page()    单入口文件名
+	current_url()    当前的url
+	redirect()    重定向到指定的url，参数：url,重定向方式,状态码
+6.自定义函数可以添加到system/core/Common.php中,会全局自动加载
+7.超级对象
+    $this->load属性实际上是类似这样实现的(仅用于理解)：
+                $obj = new CI_Loader();
+                $this->load = $obj;
+         CI_Loader()是装载器类/system/core/Loader.php的实例
+         方法：
+                    view()   装载视图
+                    vars()    分配变量
+                    database()    装载数据库操作对象
+                    model()     装载模型对象
+                    helper()    装载辅助函数
+                    ...
+    $this->uri是/system/core/URI.php CI_URI类的实例,用于处理URL。
+        传统pathinfo：入口文件.php/控制器/动作/参数名1/参数1/参数2/参数2/参数3/参数3...
+        CI中的pathinfo：入口文件.php/控制器/动作/参数1/参数2/参数3...
+        ***在CI中，使用pathinfo方式的URL时无法直接通过$_GET['var']的方式
+        获取参数，只能通过$this->uri->segment(n)的方式获取第n个参数***
+        可以设置方法的默认参数
+    $this->input是/system/core/Input.php CI_Input类的实例
+        $this->input->post('var');
+        $this->input->get('var');
+        $this->input->get_post('var');
+        $this->input->server('var');
+        $this->input->cookie('var');
+        $this->input->set_cookie('var');
+        $this->input->ip_address('var');
+        $this->input->user_agent('var');
+        ....
+        在视图中可以直接使用$this访问超级对象
+        ***使用这种方法获取的参数已经经过安全处理***
+    $this->db 是system/database/drivers/mysql/mysql_driver.php CI_DB_mysql_driver的实例
+        使用前需要先配置数据库，然后使用$this->load->database()装载。
+        $this->load->database('name');  //装载时可以传入参数以选择不同的数据库配置，这里对应
+                                                        $db['name']这一组配置项。
+        $res = $this->db->query('sql语句');  //执行sql语句,如果是增删改则返回布尔值。
+        //$affect_rows = $this->db->affected_rows();
+        //$insert_id = $this->db->insert_id();
+        $result = $res->result();  //由查询结果组成的一维数组，每条结果为一个对象。
+                                             实际上是调用了mysql_fetct_object()方法。
+        $result = $res->result_array();    //二维数组，每条结果为一个关联数组。
+        $result = $res->row();    //返回第一条数据的对象数组，类似与TP的find方法。
+        $result = $res->row_array();    //返回第一条数据的关联数组。
+        PDO参数绑定：
+        $sql = "SELECT name,value,desc FROM tbname WHERE name=? AND pwd=?";
+        $data[0] = $this->input->post('name');    //传入对应的索引数组
+        $data[1] = $this->input->post('pwd');
+        $res = $this->db->query($sql, $data);
+        ***动态表前缀需要设置交换表前缀***
+        所有执行的sql语句中的交换表前缀都会被替换成实际使用的表前缀
+        $db['default']['swap_pre'] = 'swap_';
+        $db['default']['dbprefix'] = 'blog_';
+        $sql = 'SELECT * FROM swap_user WHERE id>100';
+        这样就相当于'SELECT * FROM blog_user WHERE id>100'。
+        建议使这两个配置项相同，当需要更改表前缀时只要修改dbprefix即可。
+        数据库的自动加载：
+            配置application/config/autoload.php中$autoload['libraries'] = array('database')即可
+        AR模型：
+            1. application/config/database.php
+                    $active_record = TRUE;
+            2. 必须先设置数据库自动加载
+            3.在配置文件中，配置表前缀名，会自动添加
+                获取：
+                $res = $this->db->get('表名');//返回结果集对象
+                插入：
+                $data = array('name'=>'mary', 'passwd'=>md5('mary'));
+                $bool = $this->db->insert('user', $data);
+                $last_id = $this->db->insert_id();
+                $affected_rows = $this->db->affected_rows();
+                更新：
+                $bool = $this->db->insert('user', $data, array('id'=>3));
+                删除：
+                $where = array('name like'=>'zhang%', 'id >='=>3);
+                $bool = $this->db->delete('user', $where);
+            连贯操作：
+            $res = $this->db->select('name', 'id', 'sex')
+                                        ->from('user')
+                                        ->where('id >=', 3)    #***注意查询条件id与>=之间的空格***
+                                        ->limit(2, 3)    #***这里的limit参数顺序和mysql语句中的limit参数相反!!!***
+                                        ->order_by('id desc')
+                                        ->get();    #***不要忘了get***
+            var_dump($res->result());
+            echo $this->db->last_query();    #最后一条执行的sql语句
+8. CI中的自定义类库
+    要扩展某个类，只需要参照该类文件在system文件夹中的位置，再找到application文件夹中对应的位置，
+    创建类文件MY_原类名.php即可，这个php文件会被自动加载。可以修改自定义前缀$config['subclass_prefix'] = 'MY_';
+    更多用法参照手册[常规主题]-[创建你自己的类库]
+    自定义模型：
+        1.文件名全小写，类名首字母大写，建议增加_model后缀，
+        需要继承CI_Model。构造函数中必须先执行parent::__construct()。
+        ***当方法名与类名相同时会被视作构造方法***
+        2.在模型中可以直接使用超级对象的属性。
+        例：
+        controllers\user.php\User class
+            //加载模型并指定别名,加载后自动成为超级对象的属性
+            $this->load->model('User_model', 'user');    //首字母大小写无所谓
+            //$data = $this->User_model->getAll();
+            //获取数据,这里使用的是别名
+            $data = $this->user->getAll();
+            $this->load->view('user/index', array('list'=>$list));
+        models\user_model.php\User_model class
+            public function getAll(){
+                $res = $this->db->get('user');
+                return $res->result();
+            }
+9. URL辅助函数(只列举几个常用的,参照手册辅助函数参考\URL辅助函数)
+    $this-load->helper('url');    //如果非常常用则可以配置自动加载
+    echo site_url('控制器/方法');     //生成绝对url
+    echo base_url();    //获取入口文件所在目录的url
+    echo current_url();    //获取当前页面的绝对路径
+    echo index_page();    //获取入口文件url路径
+    echo anchor('file/upload', '转到文件上传页', 'title="文件上传"');    //创建a标签
+
+10.路由
+        application/config/routes.php
+        $route['default_controller'] = 'welcome';
+        $route['show/([\d]+).html'] = 'welcome/index/$1';
+        直接在配置文件中配置路由规则即可。
+     隐藏入口文件
+        开启apache的rewrite模块，在htpd.conf中开启；
+        在网站根目录添加.htaccess文件。
+11.分页
+        $thsi->load->library('pagination');
+        $this->load->helper('url');
+        $page_size = 10;
+        $config['base_url'] = site_url('user/test');
+        $config['total_rows'] = 100;
+        $config['per_page'] = $page_size;
+        $config['first_link'] = '首页';
+        $config['last_link'] = '尾页';
+        $config['pre_link'] = '上一页';
+        $config['next_link'] = '下一页';
+        $config['uri_segment'] = 3;
+        $this->pagination->initialize($config);
+        $offset = intval($this->uri->segment(3));
+        $sql = "select * from blog_user limit $offset, $page_size";
+12.文件上传(上传目录需要手动创建)
+        $config['upload_path'] = './uploads/';
+        $config['allowed_types'] = 'gif|png|jpg|jpeg|';
+        //生成文件名
+        $config['filename'] = uniqid();
+        //装载文件上传类
+        $this->load->library('upload', $config);
+        //这里的pic为input的name
+        $this->upload->do_upload('pic');
+        //获取上传成功后返回的数据
+        $data = $this->upload->data();
+        $filename = $data['filename'];
+13.Session
+        CI的session实际上存储在cookie中，并且cookie的大小不能超过4kb，
+        保存和读取时都会将session数据与加密字符串连接并进行md5校验，
+        如果读取时校验失败则session失效。因此必须保证加密字符串不被泄露。
+        配置session加密：$config['sess_encrypt_cookie'] = TRUE;
+        Login class\login method
+        //装载session类并设置session
+        $this->load->library('session');
+        $user = array('id'=>3, 'name'=>'jack');
+        $this->session->set_userdata('user', $user);
+        //设置一次性数据，获取一次后即失效
+        $this->session->set_flashdata('test', 'aaaaaa');
+        //在这里是无法直接获取到的，只有本方法被重新请求或跳转到其他URl时才能获取到
+        //生成加密key,将这个key配置为$config['encryption_key']即可
+        //$encryption_key = md5(uniqid());
+        Login class\login_check method
+        $this->load->library('session');
+        $user = $this->session->userdata('user');
+        //获取flash数据，读取一次后失效，主要用于跳转回之前页面
+        echo $this->session->flashdata('test');
+14.验证码
+        1.必须在网站根目录手动创建captcha文件夹
+        2.载入验证码类
+            $this->load->helper('captcha');
+        3.配置参数并生成验证码(img标签)
+            $vals = array(
+                'img_path' => './captcha/',
+                'img_url' => base_url() . 'captcha/',
+                'img_width' => '150',
+                'img_height' => '30',
+                //可以自定义验证码字符串
+                'word' => rand(1000,9999),
+                //如果是中文验证码，需要指定中文字体
+                'font_path' => './path/to/fonts/texb.ttf',
+                //过期时间(s),每次生成验证码时会删除过期的验证码
+                'expiration' => 7200 
+            );
+            $cap = create_captcha($vals);
+            echo $cap['image'];
+        4.将验证码字符串放到数据库或原生session中
+            $_SESSION['cap_str'] = $cap['word'];
+15.表单验证
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('name', '用户名', 'required');
+        $this->form_validation->set_rules('email', '邮箱', 'valid_email');
+        $bool = $this->form_validation->run();
+        if($bool){
+            //成功后的操作
+        }else{
+            //失败后则返回
+            $this->load->view('user/add');
+        }
+        在视图中可以这样输出所有错误：
+        <?php echo validation_errors(); ?>
+        <?php echo form_error('name', '<span>', '</span>')?>
+        同时可以通过set_value()函数保存之前的表单数据：
+        <input type="text" name="username" value="<?php echo set_value('username')?>" />

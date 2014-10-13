@@ -1,0 +1,582 @@
+ThinkPHP 3.1.2学习笔记
+
+加载函数库：
+load()方法：  load("@.user")
+用于临时导入函数库，`@`代表当前项目的函数文件夹
+
+CURD操作：
+R:
+数据库读取使用select和find方法，都以数组的形式返回结果，区别在于find方法最多只返回一条结果,并且为一维数组。
+getField('字段名')可以获得返回结果中指定的字段值。
+
+C:
+新增数据使用add方法。可以使用对象和数组两种方式。
+
+D:
+删除数据使用delete方法，和find方法一样，当使用delete(2)时将删除主键为2的数据。
+
+U:
+更新数据使用save方法，成功则返回影响行数。先以关联数组
+保存字段名和字段值，再将该数组作为save方法的参数即可更新数据。
+
+数据查询:
+1.普通查询方式
+       a.字符串查询
+       例如：
+       	$arr = M('User') -> where("id=4 and sex='man'") -> find()
+       b.数组查询
+       例如：
+       	$m = M('User');
+       	$data['id'] = 4;
+   	$data['sex'] = man;
+       	#如果查询条件之间是"或"的关系，则可以指定
+       	$data['_logic'] = 'or';
+       	$arr = $m -> where($data) -> find();
+2.表达式查询方式
+         使用类似数组查询的形式。
+         gt      	 	        大于
+         lt       	 	       小于
+         eq     	 	       等于
+         egt   	 	       大于等于
+         elt    	 	       小于等于
+         neq  	 	       不等于
+         like   	 	       模糊查询
+         notlike  	 	反向模糊查询（！没有空格！）
+         between    	区间查询
+         not between  	反向区间查询（！注意空格！）
+         in                       限定值查询
+         not in		       反向限定查询
+         例：
+         $data['id'] = array('gt', 4);
+         $data['sex'] = array('neq', 'woman');
+         $data['name'] = array('like', 'zhangsan%');
+         $data['name'] = array('like', array('zhang%', '%san'), 'and');
+         #这里的'and'指明多个模糊查询之间的'且'关系，默认为'或'。
+         $data['id'] = array('between', array(5,7));
+         #也可以使用M('User') -> where("id between 5 and 7") -> select();
+         $data['id'] = array('not in', array(4,6,7));
+3.区间查询
+          使用嵌套数组的方式,默认逻辑关系为'且',可指定第三个参数指定逻辑关系
+          $data['id'] = array(array('gt', 4), array('lt', 10), 'or');
+          $data['name'] = array(array('like', '%li%'), array('like', '%wang%'), 'zhangsan', 'or');
+4.统计查询
+          count       计数
+          max         求最大值
+          min          求最小值
+          avg           求平均值
+          sum          求和
+          M('User') -> where('id>4') ->count();
+          或者：
+          $data['id'] = array('gt', 4);
+          M('User') -> where($data) -> count();
+          M('User') -> min('id');
+          M('User') -> avg('score');
+5.SQL直接查询
+          a.query：主要处理读取数据的SQL
+                M() -> query('select * from tp_user where id>10');
+                成功执行查询则返回结果集数组(无结果则为空),查询未能执行返回false.
+          b.execute：用于更新和写入操作
+                M() -> execute("insert into tp_user(`username`) values('zhangsan')");
+                成功写入返回影响行数,否则返回false.
+
+连贯操作：
+1.常用连贯操作
+        select         执行查询
+        where        指定查询条件 
+        order          查询结果排序
+        limit            指定返回结果数
+        field            设置查询字段,可以在此处指定字段别名
+        group          查询结果分组
+        having         
+
+        #连贯操作时只要保证select或find方法在最后，其他操作的顺序随意。
+        M('User') -> order(array('id' => 'asc', 'name' => 'desc')) -> limit(10) select();
+        M('User') -> field('username as name,id') -> order('id desc') -> limit(3, 3) -> select();
+        M('User') -> field(array('username' => 'name', id)) -> select();   #以数组形式指定字段别名
+        M('User') -> field('id', true) -> select();    #查询除了id字段之外的其他字段
+2.其他连贯操作
+        alias            指定查询字段别名
+        table           指定要进行操作的表
+        page           结果分页
+        join             多表连接查询
+        union          联合查询
+        distinct       查询结果进行唯一性过滤
+        relation      关联查询
+        lock             写入锁定 
+        cache          查询缓存
+
+模板使用：
+a.规则
+    模板文件夹[Tpl] / [分组文件夹/][模板主题文件夹/]模板名文件夹[Index]/方法名文件夹[index].html(.tpl)
+    更改模板文件后缀名：
+    配置项  'TMPL_TEMPLATE_SUFFIX' => '.html'
+b.修改模板文件目录层次
+    配置项  'TMPL_FILE_DEPR' => '_'
+c.模板主题
+    配置项  'DEFAULT_THEME' => 'my',  //配置默认主题
+                  'TMPL_DETECT_THEME' => TEUE,  //自动侦测模板主题
+                  ’THEME_LIST' => 'your, my'   //支持的模板主题列表
+        如何动态改变模板主题？
+        1.在后台动态改变默认主题配置项
+        2.通过URL传参：t=主题名称，改变主题
+
+输出模板内容：
+a. display方法
+      1.不传参,则默认显示本模块下本方法所对应的模板。$this->display();
+      2.带参数的几种用法
+               $this->display('本模块文件夹下其他模板文件名');
+               $this->display('其他主题文件夹名' : '模块文件夹名' : '模板文件名');
+               $this->display('其他模块文件夹名' : '模板文件名');    #模块不一定有控制器,只要有相应的文件夹和模板文件即可.
+               $this->display('文件路径+完整模板文件名');
+               #相对路径的"./"指的是主入口文件所在目录
+               $this->display('模板文件', '编码', '输出类型');
+               #编码一般采用默认的utf-8即可，输出类型有"text/html"、"text/xml"等
+fetch方法：获得模板文件中的内容并以字符串形式返回
+show方法：直接显字符串内容而不需要显示模板文件
+$content = $this->fetch('Public : error');
+$this->show($content);
+
+模板赋值：
+a. assign方法：$this->assign('标示名', 赋值内容或变量);
+b. 通过对象的方式： 
+        $this->name = 'content';    //效果与$this->assign('name', 'content')相同
+        $this->display();
+
+模板替换：
+        __PUBLIC__：会被替换成当前网站的公共目录 通常是 /Public/
+        __ROOT__： 会替换成当前网站的地址（不含域名） 
+        __APP__： 会替换成当前项目的URL地址 （不含域名）
+        __GROUP__：会替换成当前分组的URL地址 （不含域名）
+        __URL__： 会替换成当前模块的URL地址（不含域名）
+        __ACTION__：会替换成当前操作的URL地址 （不含域名）
+        __SELF__： 会替换成当前的页面URL
+        具体的替换路径可以在配置文件中设置(严格区分大小写)：
+        'TMPL_PARSE_STRING' => array(
+                  __PUBLIC__' => '/Common', // 更改默认的__PUBLIC__ 替换规则
+                  __JS__' => __ROOT__ . '/Public/JS', // 增加新的JS类库路径替换规则
+                  __UPLOAD__' => __ROOT__ . '/Uploads', // 增加新的上传路径替换规则
+        )
+        如果需要输出"__PUBLIC__"这个字符串而不是进行替换，可以这样配置：
+                 '--PUBLIC--' => '__PUBLIC__', // 采用新规则输出__PUBLIC__字符串
+
+模板变量
+输出：1.标量输出
+            2.数组输出(两种方式:传统语法和点语法)
+                      a.索引数组
+                      b.关联数组
+            3.对象输出
+                      {$obj->attr}或{$obj:attr}
+
+系统变量:
+$Think.session
+$Think.cookie
+$Think.get
+$Think.post
+$Think.server
+$Think.const
+$Think.config
+$Think.now
+......
+
+使用函数:
+{$name|md5}
+{$str|strtoupper}
+{$time|date='Y-m-d H:i:s', ###}   '###'为占位符,代表当前变量,即$time
+
+默认值:
+{$name|default='这是默认值'}
+
+运算符:
++  -   *   /  %  ++   --
+
+基本语法:
+    1.导入css和js文件
+            a.link、script标签传统方式,使用模板变量替换
+            b.使用import标签引入 
+                  如:<import type='js' file='Js.test' />
+                  导入了Public文件夹下的Js目录中的test.js文件，
+                  可以省略type，默认即为js类型。
+                  导入css:<import type='css' file='Css.style' />
+                  导入了Public文件夹下的Css目录中的style.css文件
+                  #如果要自定义文件夹，即：
+                  <import type='css' file='Css.basic' basepath='./Other' />
+                  导入了主入口文件所在目录下的Other/Css/basic.css文件
+             c.使用load标签导入
+                  load标签会自动检测导入文件的类型，因此只需指定文件
+                  名即可：
+                  <load href='__PUBLIC__/Js/main.js'/>
+                  <load href='__PUBLIC__/Css/basic.css'/>
+    2.分支结构
+            a. if...else...
+                  <if condition='$age lt 18'>
+                        未成年
+                  <elseif condition='$age eq 18'/>
+                        18岁
+                  <else/>
+                        成年
+                  </if>
+                  #注  "heq":"==="   "nheq":"!=="，
+                     可以使用"AND"和"OR"。
+
+            b. switch...case...
+                   <switch name='number'>
+                          <case value='1'>一个和尚挑水吃</case>
+                          <case value='2'>两个和尚抬水吃</case>
+                          <case value='3'>三个和尚没水吃</case>
+                          <default />默认没水吃
+                  </switch>
+                  #注:这里不用break,thinkphp会自动加上break语句
+    3.循环结构
+             a. for
+                          <for start='0' end='10' name='i'>
+                                <tr><td>{$i}</td></tr>
+                          </for>
+                          #name属性默认值为i，这里不写也可以，
+                          可以使用step属性指定步长，用comparsion
+                          属性指定比较条件，默认为'lt'
+             b. volist
+                          <volist name='arr' id='v' offset='3' length='2'>
+                                {$v.uid}<br/>
+                          </volist>
+                          #表示从数组变量arr中取出第3到5个元素中的uid
+                            可以使用mod取出指定整数倍的索引元素
+             c. foreach
+                          <foreach name='arr' item='v' key='k'>
+                                  {$k} => {$v}
+                          </foreach>
+                          #遍历数组输出键值对
+      4.特殊标签
+             a.比较标签
+                        eq   lt   gt    neq    elt    egt    heq    nheq
+              例:  <eq name='n' value='10'>等于10<else/>不等于10</eq>
+              其他的比较标签用法一样，相当于if...else...的简写
+            b.范围标签
+                     in    between   notin    notbetween
+                  <in name='n' value='9,10,11,12'>在这些数中<else/>不在这些数中</in>
+                  <between name='n' value='1,10'>在1-10中<else/>不在1-10中</between>
+            c.其他标签(也可以结合<else/>标签使用)
+                present - notpresent        判断标签是否已经赋值
+                empty - notempty             判断变量是否为空
+                defined - notdefined        判断常量是否已经定义
+                define                                 在模板中定义一个常量
+                assign                                  在模板中对变量赋值
+      5.其他
+            a.在模板中书写php代码
+               php标签 : <php> echo "php代码" </php>
+               #尽管可以在模板中书写php代码，但不建议这样做。应尽量将表现和逻辑分离。
+            b.解决与js和css的冲突:
+                修改左右定界符: TMPL_L_DELIM、TMPL_R_DELIM
+#*#模板中单标签必须严格遵照xml式的闭合标签写法，否则无法解析。
+
+模板高级：
+      1.包含文件 
+        <include file='./Tpl/default/Public/header.html'/>  //可以指定绝对路径
+        <include file='header' keywords='like'/>     //包含当前模块下的header模板
+        <include file='Public:header'/>  //包含Public模块(在Tpl目录下)的header模板(只要有相应文件夹和文件即可)
+        <include file="主题名:模块名:操作名" />    //包含其他模板主题的模板
+        <include file="$变量名" />        //通过变量控制要引入的文件
+        <include file='file1,file2' />      //从3.1版本起，可以一次引入多个文件
+        包含文件时可以传递参数，在被包含文件中这样获取：[keywords]
+       
+       2.模板布局
+             a.不使用自动渲染:
+                   将主模板命名为默认的layout.html(Tpl下),要填充的内容用{__CONTENT__} 代替,
+                  在用于渲染的模板中使用layout标签即可:
+                   <layout name='layout' />
+            b.使用自动渲染:
+                  开启配置项LAYOUT_ON，在显示模板时即会对layout.html进行渲染。
+            #如果不需要使用布局模板，则在文件开头加入{__NOLAYOUT__}即可.
+            #可以通过配置LAYOUT_NAME来改变布局模板文件的名称.
+            c.使用技巧
+                  在layout渲染模板文件中也可以导入其他模板文件；
+                  header和footer文件中也可以使用layout标签，但不建议使模板过于复杂；
+                  如何理解：
+                      模板渲染的原理是使用模板渲染后，控制器中执行display方法时，
+                      解析相应的模板文件，如果开启了自动渲染或在该模板中解析到layout
+                      标签时，会去解析对应的layout模板，本模板中的内容会被替换到layout模板中的{__CONTENT__}，经过这样解析处理的最终的layout文件会被显示。
+                      下面是一个小实例：
+                      layout.html
+                           <include file="Public:header" />
+                           <div id="main" class="main" >
+                                  {__CONTENT__}
+                           </div>
+                           <include file="Public:footer" /> 
+                     Public/header.html
+                          <h1>这里是头部</h1>
+                     Public/footer.html
+                          <p>这里是底部<p>
+                     main.html
+                          <layout name='layout' />
+                          <b>这里是content部分</b>
+                     original.html
+                        {__NOLAYOUT__}
+                        <p>这是没有经过模板渲染的内容<p>
+                     #当display original时，显示的是:
+                          <p>这是没有经过模板渲染的内容<p>
+                       而display main时，显示的是：
+                          <h1>这里是头部</h1>
+                          <div id="main" class="main" >
+                                <b>这里是content部分</b>
+                          </div>
+                          <p>这里是底部<p>
+        3.模板继承
+                  从3.1.2版本开始thinkphp支持模板继承，它比模板渲染更加灵活强大。
+                  简单地说就是在父模板中定义block标签，子模板继承了父模板，父模板
+                  中的相应block会在被替换为子模板中相应的block后输出。
+                  最最简单的一个用法示例：
+                  base.html
+                          <html>
+                                <head>
+                                      <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+                                      <block name='title'>标题部分</block>
+                                </head>
+                                <body>
+                                      <block name='content'>内容部分</block>
+                                </body>
+                          </html>
+                  extend.html
+                         <extend name='base' />
+                         <block name='title'>这是标题</block>
+                         <block name="content">这是内容</block>
+                 display extend时显示的就是替换后的内容：
+                        <html>
+                                <head>
+                                      <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+                                      <block name='title'>这是标题</block>
+                                </head>
+                                <body>
+                                      <block name='content'>这是内容</block>
+                                </body>
+                          </html>
+
+控制器的模块和操作
+1.空模块和空操作
+            a.空操作
+                 public function _empty ($opt) {
+                        echo $opt;
+                 }
+            b.空模块
+                 新建文件emptyAction.class.php,当访问不存在的模块时，
+                 就会访问空模块下的index方法。
+                 class EmptyAction extends Action{
+                        public function index (){
+                                $this->display('blankPage');
+                        }
+                 }
+2.前置操作和后置操作
+    在调用一个方法时，如果该模块下存在`_before_方法名`方法
+    或`_after_方法名`方法，则会在该方法执行前后分别执行这
+    两个方法。
+3.重定向
+     redirect方法
+          $this->redirect('New/category', array('cate_id' => 2), 5, '页面跳转中...');
+
+URL
+1.规则
+        a.默认是区分大小写的
+        b.可以开启配置项URL_CASE_INSENSITIVE不区分大小写.
+        c.如果配置了不区分大小写，模块文件为UserGroupAction.class.php，则url中模块应写为user_group或UserGroup.
+2.伪静态
+        a.限制伪静态后缀   'URL_HTML_SUFFIX' => 'html|xml|shtml'
+        b.默认伪静态后缀为html
+        c.可以通过常量__EXT__获取当前的伪静态后缀
+3.路由
+        a.开启路由  URL_ROUTER_ON
+        b.使用路由
+                (1)规则表达式配置路由
+                        'my' => 'Index/index',       //注意!不是/Index/index!!!
+                        ':id/:num' => 'Index/index',    //动态地址路由,同时进行get传参
+                      加上\d表示只能是数字，加上^表示开头，$表示结束
+                (2)正则表达式配置路由
+                      '/^year\/(\d{4})\/(\d{1,2})\/(\d{1,2})/' => 'Index/index?year=:1&month=:2&date=:3'
+                (3)注意事项
+                        a.复杂的路由应放在前面
+                        b.使用$进行完全匹配
+                        c.使用正则匹配
+4.URL生成
+        使用U方法生成URL:
+                U('[分组/模块/操作]?参数' [,'参数','伪静态后缀','是否跳转','显示域名'])
+                U('Index/index', array('id' => '1', 'name' => 'zhangsan'), 'html')
+5.重写
+        见手册
+
+应用分组
+        定义配置项APP_GROUP_LIST和DEFAULT_GROUP来进行模块分组。
+        分组后，原来的文件路径即改为 模块名/原文件 的模式，需要注意的是，
+        函数库(common)分组后，common目录下的common.php为共用的，而
+        模块名/function.php 为该模块所特有的。分组后不同模块不能访问非共用
+        的模块文件。
+        分组后，如果不想Tpl目录中有过多的子目录，可以在配置文件中定义：
+        TMPL_FILE_DEFR => '_'，那么，原来的Tpl/Home/Index/index.html
+        就变为Tpl/Home/Index_index.html
+        *每个分组模块都可以定义自己的空模块
+
+页面跳转
+1.success方法
+          操作成功后，使用success方法来跳转至其他页面:
+                $this->success('操作成功!', U('User/test'));    //跳转到User模块下的test方法
+          ***注意：这里要用U方法生成完整URL才能跳转成功
+2.error方法
+          操作失败后显示错误页面并自动跳转(默认返回上一页):
+                 $this->error('操作失败!');
+                 $this->error('操作失败', U('Index/index'));
+       ***success和error方法都有对应的模板，可以通过配置项设置:
+                 'TMPL_ACTION_ERROR' => THINK_PATH . 'Tpl/dispatch_jump.tpl';
+                 'TMPL_ACTION_SUCCESS' => THINK_PATH . 'Tpl/dispatch_jump.tpl';
+       ***模板文件中可以使用模板标签，并且可以使用模板变量:
+                $msgTitle、$message、$status、$waitSecond、$jumpUrl
+3.redirect方法
+          跳转到指定页面，可以直接跳转，也可以等待一段时间后再添跳转
+                $this->redirect('New/category', array('cate_id' => 2), 5, '页面跳转中...');
+                //等待5秒跳转到New模块下的category方法，并传递参数cate_id=2
+4.halt方法
+          输出错误信息并停止
+
+ajaxReturn方法
+          $this->ajaxReturn(返回数据,提示信息,操作状态);
+          支持返回数组，默认返回的是一个json对象：
+          {"data": 返回数据, "info": 提示信息, "status": 操作状态}
+          {"data":{"name":"zhangsan","age":28,"sex":"man"},"info":"0","status":1}
+          可以通过配置项DEFAULT_AJAX_RETURN配置返回数据的格式，
+          根据操作状态可以进行进一步的操作。
+
+jquery中的ajax:
+1.load()方法
+       $('elements').load( url [,data] [,callback])
+       载入远程 HTML 文件代码并插入至 DOM 中
+       此方法默认使用GET方式传递，如果[data]有参数传递，则会
+       自动转换为POST方式。可以指定选择符筛选载入的HTML文档，语法： url参数:"url  selector"。
+       回调函数有三个参数：
+                responseText              请求返回的内容
+                textStatus                    请求返回的状态
+                XMLHttpResponse     XMLHttpResponse对象
+       ***注意：无论load方法的ajax请求是否成功，只要请求完成，即
+                         调用回调函数。
+
+2. $.get()方法
+       $.get( url [,data] [,callback] [,type])
+       使用GET方式来进行异步请求。
+       参数：url         请求的html页面地址
+                   data      Object, 发送到服务器的key/value数据会作为
+                                 QueryString附加到请求URL中。
+                   callback 回调函数
+                   type       服务器返回内容的格式,xml、html、script、json等
+        ***注意：当且仅当$.get方法载入成功时调用回调函数，
+                          请求结果和状态会被自动传递给该回调函数。
+        例：
+        $("#btn").click(function(){
+                $.get("__APP__/Index/dajax", {
+                        username : $("#username").val(),
+                        content : $("#content").val()
+                }, function (data,textStatus){
+                       //data: 返回的内容可以是xml、json文件、html片段等
+                       //textStatus：请求状态有success、error、notmodified、timeout四种
+                       $("resText").html(data);
+                })
+        });
+
+3.$.post()方法
+        $.post( url [,data] [,callback] [,type])
+        用法与$.get方法一样，但实现方式有区别：
+             a. post请求是作为http消息的实体内容发送到服务器
+             b. post方式传输的数据理论上没有大小限制,get通常
+                小于2KB
+             c. get方式请求的数据会被浏览器缓存
+        ***注意：load方法中data参数不为空时采用post方式，
+                          与$.post方法一样
+
+4. $.getScript()方法
+        $.getScript(filepath [,callback])
+        用于加载js脚本:
+        $(function(){
+              $('#send').click(function(){
+                      $.getScript('test.js', function(){alert('加载js文件完成');});
+              });
+        });
+
+5. $.getJSON()方法
+        用于加载json文件，用法与$.getScript方法相同。
+        调用回调函数时会自动传入一个参数data，它是返回的内容。
+        可以在回调函数中对其作进一步处理。
+6. $.each()方法
+        $.each(data, function(index, content){
+                //some dealings
+        })
+        用于对数组或对象进行遍历并用回调函数处理。
+        参数：
+              data         对象或数组
+              index       对象的属性或数组的索引
+              content   对象属性的值或对应于索引的值
+7. $.ajax()方法
+        $.ajax(options)
+       jQuery最底层的ajax实现。参数options中包含了ajax相关
+       请求设置以及回调函数等信息。
+       参数：
+              url                       发送请求的地址
+              type                    请求方式,get、post、put、delete
+              timeout             请求超时时间(ms)，会覆盖$.ajaxSetup()
+                                          的全局设置
+              async                  布尔值。如果为true,则发送同步请求，
+                                          发送请求时将锁住浏览器！
+              beforeSend       发送请求前执行的函数，只有一个自动传入
+                                          的参数XMLHttpRequest对象,可以返回flase
+                                          以取消本次请求
+              cache                  布尔值。为false将不会从缓存加载请求信息
+              complete           请求完成后的回调函数，请求成功或失败均
+                                          调用。两个自动传入的参数:XMLHttpRequest
+                                          和textStatus
+              contentType     默认: "application/x-www-form-urlencoded",
+                                          送信息至服务器时内容编码类型。默认值适合
+                                          大多数应用场合。
+              data                    对象或字符串。对象必须为json格式
+              dataType           返回数据类型，xml、html、script、json等
+              error                   请求失败后的回调函数，三个参数：
+                                          XMLHttpRequest对象、错误信息和
+                                          捕获的错误信息对象
+              global                 布尔值,默认true,表示是否触发全局ajax事件
+              ifModified         布尔值,默认false,仅在服务器数据改变时获取
+                                          新数据。使用 HTTP 包 Last-Modified 头信息
+                                          判断。
+              processData       布尔值,默认true,默认情况下，发送的数据将
+                                            被转换为对象(技术上讲并非字符串) 以配合
+                                            默认内容类型
+                                            "application/x-www-form-urlencoded"。
+                                            如果要发送 DOM 树信息或其它不希望
+                                            转换的信息，请设置为 false。
+              success               请求成功后的回调函数，两个参数：data和
+                                           textStatus
+8. serialize()方法
+        用于序列化DOM元素，序列化form表单为QueryString从而可以
+        直接在ajax请求中发送。也可以序列化单个或多个表单元素。
+        序列化时会自动编码。
+9. serializeArray()方法
+        类似于serialize()方法，只不过返回的是json格式的数据。
+        可以使用$.each()函数进行进一步处理。
+10. $.param()方法
+        它是serialize()方法的核心，用来对一个数组或对象序列化。
+        alert($.param({a:1, b:2, c:3}))
+11. $.ajaxSetup()方法
+        设置全局ajax默认选项。只有一个参数，为json格式的对象。
+12. ajaxStart()方法
+        设置当ajax请求开始时某个(或多个)元素的动作.参数:(匿名)函数。
+13. ajaxStop()方法
+        设置当ajax请求停止时某个(或多个)元素的动作.参数:(匿名)函数。
+        例：$('#loading').ajaxStart(function(){
+                          $(this).show();
+                 });
+                 $('#loading').ajaxStop(function(){
+                          $(this).hide();
+                 });    //也可以采用链式写法
+14. ajaxComplete()方法
+         ajax请求完成时执行的函数。参数：(匿名)函数。
+15. ajaxError()方法
+         ajax请求发生错误时执行的函数，捕捉到的错误可以作为最后
+         一个参数传递。
+16. ajaxSend()方法
+         ajax请求发送前执行的函数。参数：(匿名)函数。
+17. ajaxSuccess()方法
+         ajax请求成功时执行的函数。参数：(匿名)函数。
+
+_initialize方法为自动运行方法
+I方法获取session和cookie
+C方法获取和设置配置项

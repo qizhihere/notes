@@ -1,0 +1,124 @@
+1.在vim脚本中vim的命令行语句全部可用,vimscript的语法与python类似,使用`"`(单引号)作为注释符号
+2.变量
+            b:	  局部于当前缓冲区。
+            w:	  局部于当前窗口。
+            t:	  局部于当前标签页。    
+            g:	  全局。    
+            l:	  局部于函数。            
+            s:	  局部于 |:source| 的 Vim 脚本。  
+                    注:脚本变量在脚本执行完毕后不会被自动
+                       删除,下一次执行该脚本时仍然存在
+            a:	  函数参数 (只限于函数内使用)。
+            v:	  Vim 预定义的全局变量。    
+    赋值:   let type:var = value
+    删除:   unlet type:var
+            unlet! type:var "当该变量不存在时不报错
+
+
+3.if分支
+    if a
+        echom "x"
+    elseif b
+        echom "y"
+    else
+        echom "z"
+    endif
+    注：在使用判断条件时，`==`与vim全局变量ignorecase有关，如果ignorecase为0，
+        则使用`==`判断字符串时对大小写不敏感，反之对大小写敏感
+        而`==?`则始终对大小写不敏感，`==#`始终对大小写敏感,建议对数字的比较也
+        使用`==?`。`>`、`<`同理.
+4.while循环
+    let s:i = 1
+    while s:i < 5 
+        {语句}
+        let s:i += 1
+    endwhile
+5.for循环
+    for i in range(1, 4)
+      echo "count is" i
+    endfor
+6.exist()函数检测变量是否存在,注意传入的参数是变量名字符串而不是变量本身
+    if exists("s:s_var")
+        echo "variable s_var has exists!values" s:s_var"."
+    else if exists("s:t_var")
+        echo "variable t_var has exists!values" t_var"."
+    else
+        echo "both of s_var and t_var does not exist!""."
+    endif
+7.echo命令和shell中的echo用法差不多,只是不能够像在shell中一样传递参数,
+  单引号字符串原样输出,双引号字符串中特殊字符会被转义
+  echom 命令的作用与echo命令一样，但是echom输出的内容会被保存到vim的messages
+  中，可以通过:messages查看,且echom不能对列表使用
+8.关于boolean类型,非空非零即为真,但不以数字开头的字符串转换为数字时为0,
+  如:if "ture"会被解析为假
+9.函数
+    1).编码规范:没有作用域限制的函数必须以大写字母开头
+    2).定义函数:
+            function GetMeow()
+                return "MEow String!"
+            endfunction
+    3).调用函数:
+            :echom b:GetMeow(arg1,arg2,arg3,...)
+    4).接受参数
+            a:0     传入的参数个数
+            a:n     第n个传入的参数(n>=1&&n∈Z)
+            a:000   传入的多余参数的列表
+            a:arg   传入的名为arg的参数
+    5).****不能对函数的参数变量重新赋值
+10.数字
+    vim有两种数字形式：Number和Float
+    Number:
+        255 0xff 0Xff 017(八进制)
+    Float:
+        100.1  5.45e+3(指数)  12.1e-2(负指数)
+    注：小数点和小数位必须要有，如5e3错误而5.0e3正确
+        当进行Float和Number类型混合运算时，vim强制转换为Float
+    除法：
+        3 / 2 = 1
+        3 / 2.0 = 1.5
+11.字符串
+    '+'是数字运算符,如果对字符串使用则会现将字符串强制转换为数字
+    之后再运算.
+    '.'是vim的字符串连接符,和php一样.
+    双引号中可以使用转义符号来表示特殊字符,如\\,\",\n等
+    字符串字面量即单引号字符串将被原样输出,不做任何转义
+    非数字开头的字符串在强制转换时将被转换为0
+    使用:help expr_quote查看特殊转义字符
+12.vim常用内置函数
+    strlen("string")
+    len("string")               统计字符串长度
+    split("string","sepr")      分割字符串
+    join(["a","b","c"],";")     连接字符串列表
+    tolower("string")           转换为小写
+    toupper("STRING")           转换为大写
+13.execute命令
+    与python的eval函数一样,将字符串当做命令来执行
+    execute 'rightbelow vsplit' . bufname('#')
+14.normal命令
+    normal命令简单地接受一串键值并当作是在normal模式下输入的。
+        :normal ggdd    移动到第一行并将其删除
+    注:normal命令会顾及当前的所有映射,例如将G映射到dd,则normal G
+       为删除当前行,要忽略用户定义的映射,可以使用normal! command.
+15.正则表达式
+    vim的搜索"/"和"?"都支持正则表达式,vim对正则表达式有四种解析
+    模式,普通模式下需要为特殊元字符如'+'添加反斜杠以表示不同的含义.
+        :execute "normal! gg/print.\\+\<CR>"
+    使用单引号来包围正则表达式:
+        :execute "normal! gg" . '/print.\+' . "\<CR>"
+    通常情况下使用`/\vregex`来搜索即可,`\v`即very magic,此模式下
+    正则表达式书写方式与其他语言大部分都相同.
+16.Ex模式特殊字符(可以通过:h cmdline-special获取帮助):
+    %   当前文件名
+    #   轮换文件名
+    #n  第n个缓冲区的文件名
+    ##  参数列表里的所有文件名
+    #<n 第n个旧文件名(可通过:oldfiles查看)
+    <cword>    被当前光标下的单词代替 (类似于 |star|)
+	<cWORD>    被当前光标下的字串代替 (见 |WORD|)
+	<cfile>    被当前光标下的路径名代替 (类似于 |gf| 用的方法)
+	<afile>    在执行自动命令时，被用来读或写的文件的文件名取代。
+	<abuf>     在执行自动命令时，被当前有效的缓冲区序号取代 (对于
+	<sfile>    执行 ":source" 命令时，替换为正在被 "source" 执行的文件名。
+	<slnum>	   执行 ":source" 命令时，替换为行号。
+    注：这些特殊字符可以通过expand函数进行对应的替换，之后使用shellescape
+        函数进行转义

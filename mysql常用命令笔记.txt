@@ -1,0 +1,240 @@
+int(M)中M的含义为最大显示宽度，M 的值跟 int(M) 所占多少存储空间并无任何关系。
+int(3)、int(4)、int(8) 在磁盘上都是占用 4 btyes 的存储空间。
+说白了，除了显示给用户的方式有点不同外，int(M) 跟 int 数据类型是相同的。
+如果int的值为10 ，int（10）显示结果为0000000010，int（3）显示结果为010，就是显示的长度不一样而已 都是占用四个字节的空间
+
+mysql中没有boolean型数据，如果创建表时指定布尔型，将被自动转换为tinyint型
+
+创建表格式：
+create table message(
+	`message_id` int not null auto_increment,
+	`author_id` char(20) not null auto_increment,
+	`time` datetime default now(),
+	`conents` text not null,
+	`reply` text,
+	foreign key(`author_id`) references users(`account`),
+	primary key(`message_id`)
+)engine=innodb auto_increment=0 default charset gbk;
+================================================================
+alter的用法：
+ALTER [IGNORE] TABLE tbl_name alter_spec [, alter_spec ...]
+
+alter_specification:
+ADD [COLUMN] create_definition [FIRST | AFTER column_name ]
+or ADD INDEX [index_name] (index_col_name,...)
+or ADD PRIMARY KEY (index_col_name,...)
+or ADD UNIQUE [index_name] (index_col_name,...)
+or ALTER [COLUMN] col_name {SET DEFAULT literal | DROP DEFAULT}
+or CHANGE [COLUMN] old_col_name create_definition
+or MODIFY [COLUMN] create_definition
+or DROP [COLUMN] col_name
+or DROP PRIMARY KEY
+or DROP INDEX index_name
+or RENAME [AS] new_tbl_name
+or table_options
+================================================================
+下面是一些常用操作：
+修改系统时区：
+set time_zone = '+8:00';
+或者修改配置文件my.ini中[mysqld]下的default-time-zone = '+8:00'（没有则添加）
+同时修改PHP时区：
+date_default_timezone_set('PRC') or die('时区设置失败，请联系管理员！');
+
+删除表：
+drop table message;
+修改表名：
+alter table tablename rename (as) newname;
+删除数据库：
+drop database database_name;
+备份数据库：
+cmd：mysql -uroot -p dbname >path/dbname.sql
+还原数据库：
+cmd: mysql -uroot -p dbname <backupfile.sql
+导入数据库文件：
+mysql>source path/to/your_file.sql；
+数据库修改名称：
+在较新的mysql版本中没有直接修改数据库名称的办法，解决方法是先备份后再创建一个新的数据库，之后再还原。更多数据库备份及恢复命令请自行百度。
+
+
+
+*所有的(column)表示书写命令时'column'可加可不加。
+添加字段：
+alter table `pics` add (column) `name` char(100);
+修改字段:
+alter table tablename modify (column) fieldname fieldtype charset charsettype default ...;
+alter table tablename change oldname newname fieldtype charset charsettype default ...;
+*modify和change的用法基本都一样,都可以修改字段的字符编码、默认值等，区别在于change可以修改字段名称。在mysql中alter...alter...不能用于修改字段类型。
+
+删除字段：
+alter table tablename drop (column) fieldname;
+
+修改字段默认值：
+alter table tablename alter (column) fieldname  drop default; (若本身存在默认值，则先删除)
+alter table tablename alter (column) fieldname  set default 't5';(若本身不存在则可以直
+接设定)
+*nysql的默认值除了timestamp类型的可以是CURRENT_TIMESTAMP以外,其他的默认值都只能是常量.
+alter table cabin add column update_date TIMESTAMP default CURRENT_TIMESTAMP
+
+修改字段默认值：
+alter table tablename alter (column) fieldname set default defalutvalue;
+删除字段默认值：
+alter table tablename alter (column) fieldname drop default;
+再次设置字段默认值：
+alter table tablename alter (column) fieldname set default defaultvalue;   //如果字段本身存在默认值，那么需要先删除默认值后再设置
+插入记录：
+insert into tablename(field1,field2...) values("value1","value2"...);
+insert into tablename values("value1","value2"...); /*必须与字段一一对应*/
+
+删除记录：
+delete from tablename where condition...;
+清空表:
+delete from tablename;
+
+更新记录：
+UPDATE messages SET message_id =2 WHERE author_id = 'qizhihere1';
+UPDATE persondata SET ageage=age*2, ageage=age+1;    //记录翻倍、加一
+UPDATE items,month SET items.price=month.price  WHERE items.id=month.id;    //表间更新
+
+添加外键：
+alter table book add constraint FK_BOOK foreign key(pubid) references pub_com(id) on delete restrict on update restrict;    //指明外键名称
+alter table book add foreign key(pubid) references pub_com(id) on delete restrict on update restrict;   //不指出外键名称
+删除外键：
+alter table users drop foreign key users_ibfk_2;
+
+删除自增长的主键id：
+先删除自增长在删除主键
+alter table messages change message_id message_id int(11);    //删除自增长
+Alter table tb drop primary key;    //删除主建
+
+修改主键自增：
+alter table tb_name modify column_name int auto_increment primary key;
+
+修改数据库、表的字符集：
+alter database maildb default character set utf8;   //修改数据库的字符集
+也可以是alter database maildb default charset=utf8;或alter database tablename charset=utf8;
+alter table mailtable default character set utf8;     //修改表的字符集
+alter table ip_to_country convert to character set gb2312;  //转换表的字符集
+提示：convert to 也会把数据表 ip_to_country 的默认字符集从 utf8 更改为 gb2312。
+转换 MySQL 数据表中某个列的字符集（mysql column character set）：
+alter table ip_to_country modify country_name varchar(50) character set gb2312; 
+
+查看字符集：
+show variables like “character_set_%”;
+show collation;
+
+查看表结构、数据库：
+desc tablename;
+show create table tablename;
+show create database database_name;
+
+格式化查看：
+在查看语句后添加'\G'参数可以格式化查看内容，
+添加'\c'可以忽略当前的语句
+
+select的特殊用法：
+select version(); /*显示mysql版本*/
+select now(); /*显示当前时间*/
+select database(); /*显示当前连接的数据库*/
+select DATEOFMONTH(CURRENT_DATE); /*显示年月日*/
+select "hello,world!"; /*显示字符串*/
+select ((3+2)*1.5)/10; /*当计算器用*/
+select CONCAT(f_name, " ", l_name) AS Alias; /*串接字符串*/
+
+like的用法：
+LIKE ‘A*’ A后跟任意长度的字符 Bc,c255 
+LIKE ’5[*]’ 5*5 555 
+LIKE ’5?5’ 5与5之间有任意一个字符 55,5wer5 
+LIKE ’5##5’ 5235，5005 5kd5,5346 
+LIKE ’[a-z]’ a-z间的任意一个字符 5,% 
+LIKE ’[!0-9]’ 非0-9间的任意一个字符 0,1 
+LIKE ’[[]’ 1,* 
+
+
+查询分组：
+/*注意，查询到的并不是每组中shop_price最大的记录*/ 
+select goods_id,goods_name,cat_id,max(shop_price) from goods group by cat_id;
+
+
+函数：
+max、min、sum、avg、count
+
+
+连接查询：
+
+having结果筛选：
+select * from goods where price<100 having height>50;
+注:having对查询结果进行筛选，where对表中列进行筛选
+
+order by排序:
+order by price //默认升序排列
+order by price desc //降序排列
+order by price asc //升序排列
+order by rand() //随机排列
+
+limit显示条数:
+limit [offset],N //[从第offset条开始]显示N条记录
+
+
+mysql设置变量的三种方法
+    1.命令行参数 mysql --max_connections=200
+    2.设置文件/etc/mysql/my.cnf
+    3.启动mysql后进入控制台使用SET语句设置
+
+查看变量：
+show variables like "xxx%";
+show variables where Variable_name like "xxx%" and value='ON';
+show global variables;
+show session/local variables;
+查看状态变量:
+show status; /*状态变量是mysql本身设置和使用的，无法通过SET命令修改*/
+查看mysql服务器信息：
+mysql>\s
+引用变量:
+@@GLOBAL.var_name
+@@SESSION.var_name
+@@LOCAL.var_name
+设置变量：
+/*这里的GLOBAL、LOCAL、SESSION与@@GLOBAL、@@LOCAL、@@SESSION效果一样*/
+SET GLOBAL/LOCAL/SESSION var_name = value; 
+
+
+用户权限管理(都是通过对mysql.user表操作实现的)：
+1.grant all (privileges) on *.* to jack@'localhost' identified by 'jack' with grant option;
+说明:
+all privileges => select、update、create...
+on *.* =>可以操作任意数据库的任意表
+'localhost' => ip、域名、%(任何地方)
+with origin option =>可以将权限赋予其他用户
+2.刷新权限
+flush privileges;
+3.查看权限
+show grants; /*查看当前用户权限*/
+show grants for 'jack'@'%'; /*查看某个用户的权限(注意引号！！！)*/
+4.回收权限
+revoke delete on *.* from 'jack'@'localhost';
+5.删除用户
+drop user 'jack'@'localhost';
+6.账户重命名
+rename user 'jack'@'%' to 'jim'@'%';
+7.修改密码
+mysql>SET PASSWORD FOR 'root'@'localhost' = PASSWORD('123456');
+[root@studykiller ~]#mysqladmin -uroot -p旧密码 password 新密码
+mysql>update mysql.user set PASSWORD=PASSWORD('123456') where user='root';
+mysql>flush privileges;
+
+
+
+
+
+忘记密码的解决办法：
+编辑/etc/mysql/my.cnf文件，在[mysqld]下添加skip-grant-tables;
+重新启动mysql, sudo /etc/init.d/mysql restart;
+进入mysql，
+mysql>use mysql
+mysql>UPDATE user SET Password=password("your_pwd") WHERE User="your_username";
+mysql>flush privileges;
+退出后编辑/etc/mysql/my.cnf，将其还原；
+杀死所有mysqld进程：sudo killall mysqld mysql;
+重启mysql服务器：sudo /etc/init.d/mysql restart;
+ok!
+

@@ -1,0 +1,329 @@
+1.thread模块
+创建线程
+    thread.start_new(func, args)        | 创建新线程，线程开始时会执行传入的函数，
+    thread.start_new_thread(func, args) | args为元组，func函数的参数，必须传入!()
+创建锁
+    lock = thread.allocate()
+查看锁的状态
+    status = lock.locked() | 此函数返回值为True或False
+获得锁
+    lock.acquire() | 同样返回True或False
+释放锁
+    lock.release()
+退出线程
+    thread.exit()
+其他方法
+    thread.interrupt_main() | 在其他线程中终止主线程
+    thread.get_ident()      | 获取代表当前线程的数字，该数字在线程结束后会被新线程复用
+
+2.threading模块
+Thread类
+    t = threading.Thread(target=func) | 当需要时可以传入参数args=()
+                                      | 参数:Thread(group=None, target=None, name=None, args=(), kwargs={})
+    实例方法:
+    isAlive()         | 线程是否在运行
+    get/setName(name) | 设置线程名
+    is/setDaemon()    | 获取/设置守护进程，没有守护进程运行时，程序结束
+    start()           | 启动线程
+    join([timeout])   | 阻塞当前上下文环境的线程
+解释:
+  join:如在一个线程B中调用threada.join()，则threada结束后，线程B才会接 
+        着threada.join()往后运行。
+  setDaemon:主线程A启动了子线程B，调用b.setDaemaon(True)，则主线程结束
+        时，会把子线程B也杀死，与C/C++中得默认的效果是一样的。                                                         
+
+Lock类
+    lock = threading.Lock()
+    实例方法:
+    acquire() | 获取锁，在获取到锁之前，线程将一直处于同步阻塞状态
+    release() | 释放锁
+RLock类
+    用法与Lock类相同，但是可以多次acquire和release(针对不同线程而言)，
+    其内部使用了计数器，仅当计数器为0时处于未锁定状态
+    使单线程可以再次获得已经获得的锁
+    避免了单个线程多次acquire的死锁问题，必须成对使用
+    RLock = threading.RLock
+    方法:
+    acquire()   release()
+
+Condition类
+    ┊ 条件变量，除了提供与Lock类似的acquire和release方法外，还提供了wait和notify方法。 ┊
+    ┊ 可以认为Condition对象维护了一个锁（Lock/RLock)和一个waiting池。                  ┊
+    ┊ 线程通过acquire获得Condition对象，当调用wait方法时，线程会释放                   ┊
+    ┊ Condition内部的锁并进入blocked状态，同时在waiting池中记录这个                    ┊
+    ┊ 线程。当调用notify方法时，Condition对象会从waiting池中挑选一个                   ┊
+    ┊ 线程，通知其调用acquire方法尝试取到锁。
+    实例方法:
+    acquire([timeout])  | 获取锁，计数器-1
+    release()           | 释放锁，计数器+1
+    notify()            | 从线程池中挑选一个线程并通知，收到通知的线程将自动调用acquire()获得锁定
+                        | 调用此方法的线程必须已经获得锁定，否则抛出异常
+    notifyAll()         | 通知等待池中的所有线程，这些线程都将尝试获得锁
+    wait([timeout])     | 释放锁并进入等待池，使用此方法之前线程必须已获得锁定
+    Semaphore(value=1)  | 此方法管理计数器，value为计数器初始值，当计数器为0时，尝试获取锁
+                        | 的线程将进入同步阻塞状态。没有获得锁的主线程也可以使用release()
+    BoundedSemaphore()  | 同Semaphore。但调用release()时将会检查计数器的值是否超过初始值。
+
+Event类
+        ┊ Event（事件）是最简单的线程通信机制之一:一个线程通知事件，其他线程等待事件。   ┊
+        ┊ Event内置了一个初始为False的标志，当调用set()时设为True，调用clear()时重置为   ┊
+        ┊ False。wait()将阻塞线程至等待阻塞状态。                                        ┊
+        ┊ Event其实就是一个简化版的 Condition。Event没有锁，无法使线程进入同步阻塞状态。 ┊
+实例方法: 
+        isSet()         | 当内置标志为True时返回True。
+        set()           | 将标志设为True，并通知所有处于等待阻塞状态的线程恢复运行状态。
+        clear()         | 将标志设为False。
+        wait([timeout]) | 如果标志为True将立即返回，否则阻塞线程至等待阻塞状态，等待其他线程调用set()。
+    
+Timer类
+    ┊Timer（定时器）是Thread的派生类，用于在指定时间后调用一个方法。┊
+
+    构造方法
+        Timer(interval, function, args=[], kwargs={}) 
+            interval    | 指定的时间
+            function    | 要执行的方法
+            args/kwargs | 方法的参数
+
+        实例方法: 
+            Timer从Thread派生，没有增加实例方法。
+Local类
+    ┊ local是一个小写字母开头的类，用于管理 thread-local（线程局部的）数 ┊
+    ┊ 据。对于同一个local，线程无法访问其他线程设置的属性；线程设置的属  ┊
+    ┊ 性不会被其他线程设置的同名属性替换。可以理解成局部变量。           ┊
+
+
+示例代码:
+
+thread部分:    
+===============================================
+import thread, time, random                   ┊
+count = 0                                     ┊
+lock = thread.allocate_lock() #创建一个琐对象 ┊
+def threadTest():                             ┊
+    global count, lock                        ┊
+    lock.acquire() #获取琐                    ┊
+                                              ┊
+    for i in xrange(10000):                   ┊
+        count += 1                            ┊
+                                              ┊
+    lock.release() #释放琐                    ┊
+for i in xrange(10):                          ┊
+    thread.start_new_thread(threadTest, ())   ┊
+time.sleep(3)                                 ┊
+print count                                   ┊
+===============================================
+
+
+threading部分:
+Lock()
+==========================================================================
+import threading                                                         ┊
+import time                                                              ┊
+                                                                         ┊
+data = 0                                                                 ┊
+lock = threading.Lock()                                                  ┊
+                                                                         ┊
+def func():                                                              ┊
+    global data                                                          ┊
+    print '%s acquire lock...' % threading.currentThread().getName()     ┊
+                                                                         ┊
+    # 调用acquire([timeout])时，线程将一直阻塞，                         ┊
+    # 直到获得锁定或者直到timeout秒后（timeout参数可选）。               ┊
+    # 返回是否获得锁。                                                   ┊
+    if lock.acquire():                                                   ┊
+        print '%s get the lock.' % threading.currentThread().getName()   ┊
+        data += 1                                                        ┊
+        time.sleep(2)                                                    ┊
+        print '%s release lock...' % threading.currentThread().getName() ┊
+                                                                         ┊
+        # 调用release()将释放锁。                                        ┊
+        lock.release()                                                   ┊
+                                                                         ┊
+t1 = threading.Thread(target=func)                                       ┊
+t2 = threading.Thread(target=func)                                       ┊
+t3 = threading.Thread(target=func)                                       ┊
+t1.start()                                                               ┊
+t2.start()                                                               ┊
+t3.start()                                                               ┊
+==========================================================================
+
+RLock()
+================================================================================
+import threading                                                               ┊
+import time                                                                    ┊
+                                                                               ┊
+rlock = threading.RLock()                                                      ┊
+                                                                               ┊
+def func():                                                                    ┊
+    # 第一次请求锁定                                                           ┊
+    print '%s acquire lock...' % threading.currentThread().getName()           ┊
+    if rlock.acquire():                                                        ┊
+        print '%s get the lock.' % threading.currentThread().getName()         ┊
+        time.sleep(2)                                                          ┊
+                                                                               ┊
+        # 第二次请求锁定                                                       ┊
+        print '%s acquire lock again...' % threading.currentThread().getName() ┊
+        if rlock.acquire():                                                    ┊
+            print '%s get the lock.' % threading.currentThread().getName()     ┊
+            time.sleep(2)                                                      ┊
+                                                                               ┊
+        # 第一次释放锁                                                         ┊
+        print '%s release lock...' % threading.currentThread().getName()       ┊
+        rlock.release()                                                        ┊
+        time.sleep(2)                                                          ┊
+                                                                               ┊
+        # 第二次释放锁                                                         ┊
+        print '%s release lock...' % threading.currentThread().getName()       ┊
+        rlock.release()                                                        ┊
+                                                                               ┊
+t1 = threading.Thread(target=func)                                             ┊
+t2 = threading.Thread(target=func)                                             ┊
+t3 = threading.Thread(target=func)                                             ┊
+t1.start()                                                                     ┊
+t2.start()                                                                     ┊
+t3.start()                                                                     ┊
+================================================================================
+
+Condition()
+============================================
+import threading                           ┊
+import time                                ┊
+                                           ┊
+# 商品                                     ┊
+product = None                             ┊
+# 条件变量                                 ┊
+con = threading.Condition()                ┊
+                                           ┊
+# 生产者方法                               ┊
+def produce():                             ┊
+    global product                         ┊
+                                           ┊
+    if con.acquire():                      ┊
+        while True:                        ┊
+            if product is None:            ┊
+                print 'produce...'         ┊
+                product = 'anything'       ┊
+                                           ┊
+                # 通知消费者，商品已经生产 ┊
+                con.notify()               ┊
+                                           ┊
+            # 等待通知                     ┊
+            con.wait()                     ┊
+            time.sleep(2)                  ┊
+                                           ┊
+# 消费者方法                               ┊
+def consume():                             ┊
+    global product                         ┊
+                                           ┊
+    if con.acquire():                      ┊
+        while True:                        ┊
+            if product is not None:        ┊
+                print 'consume...'         ┊
+                product = None             ┊
+                                           ┊
+                # 通知生产者，商品已经没了 ┊
+                con.notify()               ┊
+                                           ┊
+            # 等待通知                     ┊
+            con.wait()                     ┊
+            time.sleep(2)                  ┊
+                                           ┊
+t1 = threading.Thread(target=produce)      ┊
+t2 = threading.Thread(target=consume)      ┊
+t2.start()                                 ┊
+t1.start()                                 ┊
+============================================
+
+Semaphore()
+============================================================================
+import threading                                                           ┊
+import time                                                                ┊
+                                                                           ┊
+# 计数器初值为2                                                            ┊
+semaphore = threading.Semaphore(2)                                         ┊
+                                                                           ┊
+def func():                                                                ┊
+                                                                           ┊
+    # 请求Semaphore，成功后计数器-1；计数器为0时阻塞                       ┊
+    print '%s acquire semaphore...' % threading.currentThread().getName()  ┊
+    if semaphore.acquire():                                                ┊
+                                                                           ┊
+        print '%s get semaphore' % threading.currentThread().getName()     ┊
+        time.sleep(4)                                                      ┊
+                                                                           ┊
+        # 释放Semaphore，计数器+1                                          ┊
+        print '%s release semaphore' % threading.currentThread().getName() ┊
+        semaphore.release()                                                ┊
+                                                                           ┊
+t1 = threading.Thread(target=func)                                         ┊
+t2 = threading.Thread(target=func)                                         ┊
+t3 = threading.Thread(target=func)                                         ┊
+t4 = threading.Thread(target=func)                                         ┊
+t1.start()                                                                 ┊
+t2.start()                                                                 ┊
+t3.start()                                                                 ┊
+t4.start()                                                                 ┊
+                                                                           ┊
+time.sleep(2)                                                              ┊
+                                                                           ┊
+# 没有获得semaphore的主线程也可以调用release                               ┊
+# 若使用BoundedSemaphore，t4释放semaphore时将抛出异常                      ┊
+print 'MainThread release semaphore without acquire'                       ┊
+semaphore.release()                                                        ┊
+============================================================================
+
+Event部分
+========================================================================
+import threading                                                       ┊
+import time                                                            ┊
+                                                                       ┊
+event = threading.Event()                                              ┊
+                                                                       ┊
+def func():                                                            ┊
+    # 等待事件，进入等待阻塞状态                                       ┊
+    print '%s wait for event...' % threading.currentThread().getName() ┊
+    event.wait()                                                       ┊
+                                                                       ┊
+    # 收到事件后进入运行状态                                           ┊
+    print '%s recv event.' % threading.currentThread().getName()       ┊
+                                                                       ┊
+t1 = threading.Thread(target=func)                                     ┊
+t2 = threading.Thread(target=func)                                     ┊
+t1.start()                                                             ┊
+t2.start()                                                             ┊
+                                                                       ┊
+time.sleep(2)                                                          ┊
+                                                                       ┊
+# 发送事件通知                                                         ┊
+print 'MainThread set event.'                                          ┊
+event.set()                                                            ┊
+========================================================================
+
+Timer部分
+==================================
+import threading                 ┊
+                                 ┊
+def func():                      ┊
+    print 'hello timer!'         ┊
+                                 ┊
+timer = threading.Timer(5, func) ┊
+timer.start()                    ┊
+==================================
+
+Local部分
+====================================
+import threading                   ┊
+                                   ┊
+local = threading.local()          ┊
+local.tname = 'main'               ┊
+                                   ┊
+def func():                        ┊
+    local.tname = 'notmain'        ┊
+    print local.tname              ┊
+                                   ┊
+t1 = threading.Thread(target=func) ┊
+t1.start()                         ┊
+t1.join()                          ┊
+                                   ┊
+print local.tname                  ┊
+====================================

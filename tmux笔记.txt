@@ -1,10 +1,10 @@
-1.配置文件位置：~/.tmux.conf
-2.修改默认前缀快捷键(默认<C-b>)
+###1.配置文件位置：~/.tmux.conf
+###2.修改默认前缀快捷键(默认<C-b>)
     ubind C-b
     set -g prefix C-a
     bind C-a send-prefix
-3.快捷键一览
-    基本操作：
+###3.快捷键一览
+####基本操作：
        ?         列出所有快捷键
        d         脱离当前会话，暂时返回shell界面
        D         选择要脱离的对话；在同时开启了多个会话时使用
@@ -14,7 +14,9 @@
        ~         列出提示信息缓存,包括各种tmux输出信息
        t         显示当前时间
        C-z       挂起当前会话
-    窗口操作:
+       #         显示缓冲区
+       =         选择并复制缓冲区内容
+####窗口操作:
         c      	 创建新窗口
         &      	 关闭当前窗口
         数字键   切换到指定窗口
@@ -24,8 +26,9 @@
         w      	 通过窗口列表切换窗口
         ,      	 重命名当前窗口，便于识别
         .      	 修改当前窗口编号，相当于重新排序
+        $        重命名当前sesssion
         f      	 在所有窗口中查找关键词，便于窗口多了切换
-    面板操作:
+####面板操作:
         "           	 将当前面板上下分屏
         %           	 将当前面板左右分屏
         x           	 关闭当前分屏
@@ -41,9 +44,10 @@
         Alt+o       	 逆时针旋转当前窗口的面板
         Ctrl+o      	 顺时针旋转当前窗口的面板
         z           	 tmux1.8新特性，最大化当前所在面板
-    常用操作：
+####常用命令：
         tmux ls               列出tmux所有的session
         tmux new -s name      新建名为name的session
         tmux attach -t name   恢复名为name的session
         tmux switch -t name   切换到名为name的session
         tmux detach(prefix+d) 挂起当前session,暂时退出tmux
+        C-z                   挂起当前session
